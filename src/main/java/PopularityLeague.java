@@ -32,6 +32,7 @@ public class PopularityLeague extends Configured implements Tool {
     @Override
     public int run(String[] args) throws Exception {
         // TODO
+		return 1;
     }
 
     // TODO
