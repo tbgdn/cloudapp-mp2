@@ -186,6 +186,7 @@ public class TopTitleStatistics extends Configured implements Tool {
     public static class TopTitlesStatReduce extends Reducer<NullWritable, TextArrayWritable, Text, IntWritable> {
         Integer N;
         // TODO
+		private TreeSet<Pair<Integer, String>> topTitles = new TreeSet<Pair<Integer, String>>();
 
         @Override
         protected void setup(Context context) throws IOException,InterruptedException {
@@ -199,16 +200,31 @@ public class TopTitleStatistics extends Configured implements Tool {
 
             // TODO
 			for (TextArrayWritable val: values){
-				Integer count = Integer.valueOf(val.toStrings()[1]);
-				sum += count;
-				if (count > max){
-					max = count;
+				Text[] pair = (Text[])val.toArray();
+				String word = pair[0].toString();
+				Integer count = Integer.valueOf(pair[1].toString());
+				topTitles.add(new Pair<Integer, String>(count, word));
+				if (topTitles.size() > N){
+					topTitles.remove(topTitles.first());
 				}
+			}
+
+			for (Pair<Integer, String> pair: topTitles){
+				int count = pair.first;
+				sum += count;
 				if (count < min){
 					min = count;
 				}
+				if (count > max){
+					max = count;
+				}
 			}
 			mean = sum / N;
+
+			for (Pair<Integer, String> pair: topTitles){
+				var += Math.pow(mean - pair.first, 2);
+			}
+			var = var / N;
 
             context.write(new Text("Mean"), new IntWritable(mean));
             context.write(new Text("Sum"), new IntWritable(sum));

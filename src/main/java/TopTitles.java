@@ -185,6 +185,7 @@ public class TopTitles extends Configured implements Tool {
     public static class TopTitlesReduce extends Reducer<NullWritable, TextArrayWritable, Text, IntWritable> {
         Integer N;
         // TODO
+		private TreeSet<Pair<Integer, String>> topTitles = new TreeSet<Pair<Integer, String>>();
 
         @Override
         protected void setup(Context context) throws IOException,InterruptedException {
@@ -196,9 +197,17 @@ public class TopTitles extends Configured implements Tool {
         public void reduce(NullWritable key, Iterable<TextArrayWritable> values, Context context) throws IOException, InterruptedException {
             // TODO
 			for (TextArrayWritable val: values){
-				String title = val.toStrings()[0];
-				Integer count = Integer.valueOf(val.toStrings()[1]);
-				context.write(new Text(title), new IntWritable(count));
+				Text[] pair = (Text[])val.toArray();
+				String word = pair[0].toString();
+				Integer count = Integer.valueOf(pair[1].toString());
+				topTitles.add(new Pair<Integer, String>(count, word));
+				if (topTitles.size() > N){
+					topTitles.remove(topTitles.first());
+				}
+			}
+
+			for (Pair<Integer, String> topTitle: topTitles){
+				context.write(new Text(topTitle.second), new IntWritable(topTitle.first));
 			}
         }
     }
