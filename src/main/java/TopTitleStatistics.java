@@ -179,7 +179,6 @@ public class TopTitleStatistics extends Configured implements Tool {
 				String[] countTitleArray = new String[]{topTitle.second, topTitle.first.toString()};
 				context.write(NullWritable.get(), new TextArrayWritable(countTitleArray));
 			}
-			topTitles.clear();
         }
     }
 
@@ -222,7 +221,8 @@ public class TopTitleStatistics extends Configured implements Tool {
 			mean = sum / N;
 
 			for (Pair<Integer, String> pair: topTitles){
-				var += Math.pow(mean - pair.first, 2);
+				int diff = mean - pair.first;
+				var += diff * diff;
 			}
 			var = var / N;
 
