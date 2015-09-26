@@ -91,7 +91,7 @@ public class TitleCount extends Configured implements Tool {
 				if (stopWords.contains(word)){
 					continue;
 				}
-				context.write(new Text(word), new IntWritable(0));
+				context.write(new Text(word), new IntWritable(1));
 			}
         }
     }
