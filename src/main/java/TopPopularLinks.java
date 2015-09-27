@@ -74,7 +74,7 @@ public class TopPopularLinks extends Configured implements Tool {
 
 
 		Job jobTopLinks = Job.getInstance(conf, "Top Popular Links");
-		jobTopLinks.setOutputKeyClass(Text.class);
+		jobTopLinks.setOutputKeyClass(IntWritable.class);
 		jobTopLinks.setOutputValueClass(IntWritable.class);
 
 		jobTopLinks.setMapOutputKeyClass(NullWritable.class);
@@ -126,7 +126,6 @@ public class TopPopularLinks extends Configured implements Tool {
 
     public static class TopLinksMap extends Mapper<Text, Text, NullWritable, IntArrayWritable> {
         Integer N;
-		private TreeSet<Pair<Integer, Integer>> topLinks = new TreeSet<Pair<Integer, Integer>>();
 
         @Override
         protected void setup(Context context) throws IOException,InterruptedException {
@@ -134,7 +133,7 @@ public class TopPopularLinks extends Configured implements Tool {
             this.N = conf.getInt("N", 10);
         }
         // TODO
-
+		private TreeSet<Pair<Integer, Integer>> topLinks = new TreeSet<Pair<Integer, Integer>>();
 
 		@Override
 		protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
@@ -145,6 +144,7 @@ public class TopPopularLinks extends Configured implements Tool {
 			if (topLinks.size() > N){
 				topLinks.remove(topLinks.first());
 			}
+			LOG.debug("Mapping something");
 		}
 
 		@Override
@@ -164,7 +164,6 @@ public class TopPopularLinks extends Configured implements Tool {
             this.N = conf.getInt("N", 10);
         }
         // TODO
-
 
 		@Override
 		protected void reduce(NullWritable key, Iterable<IntArrayWritable> values, Context context) throws IOException, InterruptedException {
