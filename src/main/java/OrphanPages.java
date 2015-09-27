@@ -49,14 +49,15 @@ public class OrphanPages extends Configured implements Tool {
         @Override
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             //TODO
-			String[] referralAndPages = value.toString().split(":");
-			if (referralAndPages.length >= 1){
-				context.write(new IntWritable(Integer.valueOf(referralAndPages[0].trim())), new IntWritable(0));
+			String[] pages = value.toString().split(":");
+			if (pages.length >= 1){
+				int referral = Integer.valueOf(pages[0].trim());
+				context.write(new IntWritable(referral), new IntWritable(0));
 			}
-			if (referralAndPages.length == 2){
-				String[] referredPages = referralAndPages[1].split(" ");
-				for(String referredPage: referredPages){
-					context.write(new IntWritable(Integer.valueOf(referredPage.trim())), new IntWritable(1));
+			if (pages.length == 2){
+				String[] referredPages = pages[1].trim().split(" ");
+				for (String referredPage: referredPages){
+					context.write(new IntWritable(Integer.valueOf(referredPage)), new IntWritable(1));
 				}
 			}
 		}
