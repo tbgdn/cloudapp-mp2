@@ -69,7 +69,7 @@ public class TopPopularLinks extends Configured implements Tool {
 		FileInputFormat.setInputPaths(linkCountJob, new Path(args[0]));
 		FileOutputFormat.setOutputPath(linkCountJob, tmpPath);
 
-		linkCountJob.setJarByClass(OrphanPages.class);
+		linkCountJob.setJarByClass(TopPopularLinks.class);
 		linkCountJob.waitForCompletion(true);
 
 
@@ -90,7 +90,7 @@ public class TopPopularLinks extends Configured implements Tool {
 		jobTopLinks.setInputFormatClass(KeyValueTextInputFormat.class);
 		jobTopLinks.setOutputFormatClass(TextOutputFormat.class);
 
-		jobTopLinks.setJarByClass(TopTitles.class);
+		jobTopLinks.setJarByClass(TopPopularLinks.class);
 		return jobTopLinks.waitForCompletion(true) ? 0 : 1;
     }
 
