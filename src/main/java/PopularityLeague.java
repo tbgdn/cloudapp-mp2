@@ -162,7 +162,7 @@ public class PopularityLeague extends Configured implements Tool {
 				int pageId = ints[0].get();
 				int refsNum = ints[1].get();
 				pageRanks.add(new Pair<Integer, Integer>(refsNum, pageId));
-				LOG.debug("Page {} has {} num of links.", pageId, refsNum);
+				LOG.info("Page {} has {} num of links.", pageId, refsNum);
 			}
 			int rank = -1;
 			int previousCount = 0;
@@ -172,10 +172,10 @@ public class PopularityLeague extends Configured implements Tool {
 					rank ++;
 				}
 				previousCount = count;
-				LOG.debug("Page {} has rank {}.", pair.second, rank);
+				LOG.info("Page {} has rank {}.", pair.second, rank);
 				pageIdVsRank.put(pair.second, rank);
 			}
-			LOG.debug("Reducing number of inputs.");
+			LOG.info("Reducing number of inputs.");
 			for (IntArrayWritable pair: values){
 				IntWritable[] ints = (IntWritable[])pair.toArray();
 				int pageId = ints[0].get();
