@@ -3,13 +3,17 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
@@ -19,8 +23,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.TreeSet;
 
 public class PopularityLeague extends Configured implements Tool {
 
@@ -32,25 +36,39 @@ public class PopularityLeague extends Configured implements Tool {
     @Override
     public int run(String[] args) throws Exception {
         // TODO
-		Job job = Job.getInstance(this.getConf(), "Popularity League");
-		job.setOutputKeyClass(IntWritable.class);
-		job.setOutputValueClass(IntWritable.class);
+		Configuration conf = this.getConf();
+		FileSystem fs = FileSystem.get(conf);
+		Path tmpPath = new Path("/mp2/tmp");
+		fs.delete(tmpPath, true);
 
-		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(IntWritable.class);
+		Job countingJob = Job.getInstance(this.getConf(), "Popularity League");
+		countingJob.setOutputKeyClass(IntWritable.class);
+		countingJob.setOutputValueClass(IntWritable.class);
+		countingJob.setMapOutputKeyClass(IntWritable.class);
+		countingJob.setMapOutputValueClass(IntWritable.class);
+		countingJob.setMapperClass(LinkCountMap.class);
+		countingJob.setReducerClass(LinkCountReduce.class);
+		FileInputFormat.setInputPaths(countingJob, new Path(args[0]));
+		FileOutputFormat.setOutputPath(countingJob, tmpPath);
+		countingJob.setJarByClass(TitleCount.class);
+		countingJob.waitForCompletion(true);
 
-		job.setMapperClass(LinkCountMap.class);
-		job.setReducerClass(LinkCountReduce.class);
+		Job ranking = Job.getInstance(this.getConf(), "Ranking");
+		ranking.setOutputKeyClass(IntWritable.class);
+		ranking.setOutputValueClass(IntWritable.class);
+		ranking.setMapOutputKeyClass(NullWritable.class);
+		ranking.setMapOutputValueClass(IntArrayWritable.class);
+		ranking.setMapperClass(PageRankMap.class);
+		ranking.setReducerClass(PageRankReduce.class);
+		FileInputFormat.setInputPaths(ranking, tmpPath);
+		FileOutputFormat.setOutputPath(ranking, new Path(args[1]));
+		ranking.setInputFormatClass(KeyValueTextInputFormat.class);
+		ranking.setOutputFormatClass(TextOutputFormat.class);
 
-		FileInputFormat.setInputPaths(job, new Path(args[0]));
-		FileOutputFormat.setOutputPath(job, new Path(args[1]));
-
-		job.setJarByClass(TitleCount.class);
-		return job.waitForCompletion(true) ? 0 : 1;
+		return ranking.waitForCompletion(true) ? 0 : 1;
     }
 
     // TODO
-
 	private static Logger LOG = LoggerFactory.getLogger(PopularityLeague.class);
 
 	public static String readHDFSFile(String path, Configuration conf) throws IOException{
@@ -66,6 +84,21 @@ public class PopularityLeague extends Configured implements Tool {
 			everything.append("\n");
 		}
 		return everything.toString();
+	}
+
+	public static class IntArrayWritable extends ArrayWritable {
+		public IntArrayWritable() {
+			super(IntWritable.class);
+		}
+
+		public IntArrayWritable(Integer[] numbers) {
+			super(IntWritable.class);
+			IntWritable[] ints = new IntWritable[numbers.length];
+			for (int i = 0; i < numbers.length; i++) {
+				ints[i] = new IntWritable(numbers[i]);
+			}
+			set(ints);
+		}
 	}
 
 	public static class LinkCountMap extends Mapper<Object, Text, IntWritable, IntWritable> {
@@ -100,7 +133,7 @@ public class PopularityLeague extends Configured implements Tool {
 		}
 	}
 
-	public static class LinkCountReduce extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
+	public static class LinkCountReduce extends Reducer<IntWritable, IntWritable, Text, Text> {
 		// TODO
 
 		@Override
@@ -109,8 +142,90 @@ public class PopularityLeague extends Configured implements Tool {
 			for(IntWritable page: values){
 				refLinksNum += page.get();
 			}
-			context.write(key, new IntWritable(refLinksNum));
+			context.write(new Text(key.toString()), new Text(String.valueOf(refLinksNum)));
 		}
 	}
 
+	public static class PageRankMap extends Mapper<Text, Text, NullWritable, IntArrayWritable>{
+
+		@Override
+		protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+			Integer pageId = Integer.valueOf(key.toString());
+			Integer refsNum = Integer.valueOf(value.toString());
+			context.write(NullWritable.get(), new IntArrayWritable(new Integer[]{pageId, refsNum}));
+		}
+	}
+
+	public static class PageRankReduce extends Reducer<NullWritable, IntArrayWritable, IntWritable, IntWritable>{
+
+		@Override
+		protected void reduce(NullWritable key, Iterable<IntArrayWritable> values, Context context) throws IOException, InterruptedException {
+			TreeSet<Pair<Integer, Integer>> pageRanks = new TreeSet<Pair<Integer, Integer>>();
+			for (IntArrayWritable pair: values){
+				IntWritable[] ints = (IntWritable[])pair.toArray();
+				int pageId = ints[0].get();
+				int refsNum = ints[1].get();
+				pageRanks.add(new Pair<Integer, Integer>(refsNum, pageId));
+			}
+			int rank = 0;
+			for (Pair<Integer, Integer> pair: pageRanks){
+				context.write(new IntWritable(pair.second), new IntWritable(rank ++));
+			}
+		}
+	}
 }
+
+// >>> Don't Change
+class Pair<A extends Comparable<? super A>,
+				  B extends Comparable<? super B>>
+		implements Comparable<Pair<A, B>> {
+
+	public final A first;
+	public final B second;
+
+	public Pair(A first, B second) {
+		this.first = first;
+		this.second = second;
+	}
+
+	public static <A extends Comparable<? super A>,
+						  B extends Comparable<? super B>>
+	Pair<A, B> of(A first, B second) {
+		return new Pair<A, B>(first, second);
+	}
+
+	@Override
+	public int compareTo(Pair<A, B> o) {
+		int cmp = o == null ? 1 : (this.first).compareTo(o.first);
+		return cmp == 0 ? (this.second).compareTo(o.second) : cmp;
+	}
+
+	@Override
+	public int hashCode() {
+		return 31 * hashcode(first) + hashcode(second);
+	}
+
+	private static int hashcode(Object o) {
+		return o == null ? 0 : o.hashCode();
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Pair))
+			return false;
+		if (this == obj)
+			return true;
+		return equal(first, ((Pair<?, ?>) obj).first)
+					   && equal(second, ((Pair<?, ?>) obj).second);
+	}
+
+	private boolean equal(Object o1, Object o2) {
+		return o1 == o2 || (o1 != null && o1.equals(o2));
+	}
+
+	@Override
+	public String toString() {
+		return "(" + first + ", " + second + ')';
+	}
+}
+// <<< Don't Change
