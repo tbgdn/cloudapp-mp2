@@ -49,6 +49,7 @@ public class OrphanPages extends Configured implements Tool {
         @Override
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             //TODO
+			System.out.println(key.toString() + " " + value.toString());
 			String[] pages = value.toString().split(":");
 			if (pages.length >= 1){
 				int referral = Integer.valueOf(pages[0].trim());
