@@ -164,15 +164,15 @@ public class PopularityLeague extends Configured implements Tool {
 				int refsNum = ints[1].get();
 				pageRanks.add(new Pair<Integer, Integer>(refsNum, pageId));
 			}
-			int rank = 0;
+			int rank = -1;
 			int previousCount = 0;
 			for (Pair<Integer, Integer> pair: pageRanks){
-				context.write(new IntWritable(pair.second), new IntWritable(rank));
 				int count = pair.first;
 				if (count > previousCount) {
 					rank ++;
 				}
 				previousCount = count;
+				context.write(new IntWritable(pair.second), new IntWritable(rank));
 			}
 		}
 	}
