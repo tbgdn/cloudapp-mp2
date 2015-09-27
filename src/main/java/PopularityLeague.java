@@ -74,9 +74,12 @@ public class PopularityLeague extends Configured implements Tool {
 
 		@Override
 		protected void setup(Context context) throws IOException, InterruptedException {
-			String leaguePath = context.getConfiguration().get("league");
-			league = Arrays.asList(readHDFSFile(leaguePath, context.getConfiguration()).split("\n"));
-			LOG.error("Here is the league: ", league);
+			Configuration config = context.getConfiguration();
+			String leaguePath = config.get("league");
+			String leagueContent = readHDFSFile(leaguePath, config);
+			LOG.debug("League path: {}", leaguePath);
+			LOG.debug("League content: {}", leagueContent);
+			league = Arrays.asList(readHDFSFile(leaguePath, config).split("\n"));
 		}
 
 		@Override
