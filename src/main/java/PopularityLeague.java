@@ -1,3 +1,5 @@
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -16,8 +18,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -68,7 +68,7 @@ public class PopularityLeague extends Configured implements Tool {
     }
 
     // TODO
-	private static Logger LOG = LoggerFactory.getLogger(PopularityLeague.class);
+	public static final Log LOG = LogFactory.getLog(TopPopularLinks.class);
 
 	public static String readHDFSFile(String path, Configuration conf) throws IOException{
 		Path pt=new Path(path);
@@ -156,6 +156,7 @@ public class PopularityLeague extends Configured implements Tool {
 		@Override
 		protected void reduce(NullWritable key, Iterable<IntArrayWritable> values, Context context) throws IOException, InterruptedException {
 			TreeSet<Pair<Integer, Integer>> pageRanks = new TreeSet<Pair<Integer, Integer>>();
+			Map<Integer, Integer> pageIdVsRank = new HashMap<Integer, Integer>();
 			for (IntArrayWritable pair: values){
 				IntWritable[] ints = (IntWritable[])pair.toArray();
 				int pageId = ints[0].get();
@@ -170,7 +171,12 @@ public class PopularityLeague extends Configured implements Tool {
 					rank ++;
 				}
 				previousCount = count;
+				pageIdVsRank.put(pair.second, count);
 				context.write(new IntWritable(pair.second), new IntWritable(rank));
+			}
+			for (IntArrayWritable pair: values){
+				IntWritable[] ints = (IntWritable[])pair.toArray();
+				LOG.info("Page " + ints[0].get() + " has rank " + pageIdVsRank.get(ints[0].get()));
 			}
 		}
 	}
