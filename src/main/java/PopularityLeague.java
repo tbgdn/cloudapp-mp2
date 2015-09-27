@@ -173,9 +173,11 @@ public class PopularityLeague extends Configured implements Tool {
 				previousCount = count;
 				pageIdVsRank.put(pair.second, rank);
 			}
+			LOG.debug("Reducing number of inputs.");
 			for (IntArrayWritable pair: values){
 				IntWritable[] ints = (IntWritable[])pair.toArray();
 				int pageId = ints[0].get();
+				LOG.info("Writing {} with rank {}.", pageId, pageIdVsRank.get(pageId));
 				context.write(new IntWritable(pageId), new IntWritable(pageIdVsRank.get(pageId)));
 			}
 		}
