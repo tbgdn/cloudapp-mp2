@@ -51,19 +51,82 @@ public class TopPopularLinks extends Configured implements Tool {
     @Override
     public int run(String[] args) throws Exception {
         // TODO
-		return 1;
+		Configuration conf = this.getConf();
+		FileSystem fs = FileSystem.get(conf);
+		Path tmpPath = new Path("/mp2/tmp");
+		fs.delete(tmpPath, true);
+
+		Job linkCountJob = Job.getInstance(this.getConf(), "Link Count");
+		linkCountJob.setOutputKeyClass(IntWritable.class);
+		linkCountJob.setOutputValueClass(IntWritable.class);
+
+		linkCountJob.setMapOutputKeyClass(IntWritable.class);
+		linkCountJob.setMapOutputValueClass(IntWritable.class);
+
+		linkCountJob.setMapperClass(LinkCountMap.class);
+		linkCountJob.setReducerClass(LinkCountReduce.class);
+
+		FileInputFormat.setInputPaths(linkCountJob, new Path(args[0]));
+		FileOutputFormat.setOutputPath(linkCountJob, tmpPath);
+
+		linkCountJob.setJarByClass(OrphanPages.class);
+		linkCountJob.waitForCompletion(true);
+
+
+		Job jobTopLinks = Job.getInstance(conf, "Top Popular Links");
+		jobTopLinks.setOutputKeyClass(Text.class);
+		jobTopLinks.setOutputValueClass(IntWritable.class);
+
+		jobTopLinks.setMapOutputKeyClass(NullWritable.class);
+		jobTopLinks.setMapOutputValueClass(IntArrayWritable.class);
+
+		jobTopLinks.setMapperClass(TopLinksMap.class);
+		jobTopLinks.setReducerClass(TopLinksReduce.class);
+		jobTopLinks.setNumReduceTasks(1);
+
+		FileInputFormat.setInputPaths(jobTopLinks, tmpPath);
+		FileOutputFormat.setOutputPath(jobTopLinks, new Path(args[1]));
+
+		jobTopLinks.setInputFormatClass(KeyValueTextInputFormat.class);
+		jobTopLinks.setOutputFormatClass(TextOutputFormat.class);
+
+		jobTopLinks.setJarByClass(TopTitles.class);
+		return jobTopLinks.waitForCompletion(true) ? 0 : 1;
     }
 
     public static class LinkCountMap extends Mapper<Object, Text, IntWritable, IntWritable> {
         // TODO
-    }
+
+		@Override
+		protected void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+			String[] pages = value.toString().split(":");
+			if (pages.length == 2){
+				String[] referredPages = pages[1].trim().split(" ");
+				for (String referredPage: referredPages){
+					context.write(new IntWritable(Integer.valueOf(referredPage)), new IntWritable(1));
+				}
+			}
+		}
+	}
 
     public static class LinkCountReduce extends Reducer<IntWritable, IntWritable, IntWritable, IntWritable> {
         // TODO
-    }
+
+		@Override
+		protected void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+			int refLinksNum = 0;
+			for(IntWritable page: values){
+				refLinksNum += page.get();
+			}
+			if (refLinksNum == 0){
+				context.write(key, new IntWritable(refLinksNum));
+			}
+		}
+	}
 
     public static class TopLinksMap extends Mapper<Text, Text, NullWritable, IntArrayWritable> {
         Integer N;
+		private TreeSet<Pair<Integer, Integer>> topLinks = new TreeSet<Pair<Integer, Integer>>();
 
         @Override
         protected void setup(Context context) throws IOException,InterruptedException {
@@ -71,7 +134,26 @@ public class TopPopularLinks extends Configured implements Tool {
             this.N = conf.getInt("N", 10);
         }
         // TODO
-    }
+
+
+		@Override
+		protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+			int linkId = Integer.valueOf(key.toString());
+			int refLinksNum = Integer.valueOf(value.toString());
+			topLinks.add(new Pair<Integer, Integer>(linkId, refLinksNum));
+
+			if (topLinks.size() > N){
+				topLinks.remove(topLinks.first());
+			}
+		}
+
+		@Override
+		protected void cleanup(Context context) throws IOException, InterruptedException {
+			for (Pair<Integer, Integer> pair: topLinks){
+				context.write(NullWritable.get(), new IntArrayWritable(new Integer[]{pair.first, pair.second}));
+			}
+		}
+	}
 
     public static class TopLinksReduce extends Reducer<NullWritable, IntArrayWritable, IntWritable, IntWritable> {
         Integer N;
@@ -82,5 +164,24 @@ public class TopPopularLinks extends Configured implements Tool {
             this.N = conf.getInt("N", 10);
         }
         // TODO
-    }
+
+
+		@Override
+		protected void reduce(NullWritable key, Iterable<IntArrayWritable> values, Context context) throws IOException, InterruptedException {
+			TreeSet<Pair<Integer, Integer>> topLinks = new TreeSet<Pair<Integer, Integer>>();
+
+			for (IntArrayWritable linkAndCount: values){
+				Integer[] ints = (Integer[]) linkAndCount.toArray();
+				topLinks.add(new Pair<Integer, Integer>(ints[0], ints[1]));
+				if (topLinks.size() > N){
+					topLinks.remove(topLinks.first());
+				}
+			}
+
+			for (Pair<Integer, Integer> pair: topLinks){
+				context.write(new IntWritable(pair.first), new IntWritable(pair.second));
+			}
+
+		}
+	}
 }
