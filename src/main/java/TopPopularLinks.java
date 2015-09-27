@@ -168,8 +168,8 @@ public class TopPopularLinks extends Configured implements Tool {
 			TreeSet<Pair<Integer, Integer>> topLinks = new TreeSet<Pair<Integer, Integer>>();
 
 			for (IntArrayWritable linkAndCount: values){
-				Integer[] ints = (Integer[]) linkAndCount.toArray();
-				topLinks.add(new Pair<Integer, Integer>(ints[0], ints[1]));
+				IntWritable[] ints = (IntWritable[]) linkAndCount.toArray();
+				topLinks.add(new Pair<Integer, Integer>(ints[0].get(), ints[1].get()));
 				if (topLinks.size() > N){
 					topLinks.remove(topLinks.first());
 				}
