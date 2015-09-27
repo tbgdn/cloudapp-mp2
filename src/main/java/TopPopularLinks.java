@@ -142,7 +142,6 @@ public class TopPopularLinks extends Configured implements Tool {
 			if (topLinks.size() > N){
 				topLinks.remove(topLinks.first());
 			}
-			LOG.debug("Mapping something");
 		}
 
 		@Override
