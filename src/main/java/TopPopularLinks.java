@@ -118,9 +118,7 @@ public class TopPopularLinks extends Configured implements Tool {
 			for(IntWritable page: values){
 				refLinksNum += page.get();
 			}
-			if (refLinksNum == 0){
-				context.write(key, new IntWritable(refLinksNum));
-			}
+			context.write(key, new IntWritable(refLinksNum));
 		}
 	}
 
