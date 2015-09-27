@@ -54,7 +54,7 @@ public class OrphanPages extends Configured implements Tool {
 				context.write(new IntWritable(Integer.valueOf(referralAndPages[0].trim())), new IntWritable(0));
 			}
 			if (referralAndPages.length == 2){
-				String[] referredPages = referralAndPages[1].split(",");
+				String[] referredPages = referralAndPages[1].split(" ");
 				for(String referredPage: referredPages){
 					context.write(new IntWritable(Integer.valueOf(referredPage.trim())), new IntWritable(1));
 				}
