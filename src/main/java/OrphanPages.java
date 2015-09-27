@@ -12,6 +12,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -25,7 +27,9 @@ public class OrphanPages extends Configured implements Tool {
     }
 // <<< Don't Change
 
-    @Override
+	private static final Logger LOG = LoggerFactory.getLogger(OrphanPages.class);
+
+	@Override
     public int run(String[] args) throws Exception {
         //TODO
 		Job job = Job.getInstance(this.getConf(), "Orphan Pages");
@@ -49,7 +53,8 @@ public class OrphanPages extends Configured implements Tool {
         @Override
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
             //TODO
-			System.out.println(key.toString() + " " + value.toString());
+			LOG.debug("Key: {}, value: {}", key.toString(), value.toString());
+			LOG.error("Key: {}, value: {}", key.toString(), value.toString());
 			String[] pages = value.toString().split(":");
 			if (pages.length >= 1){
 				int referral = Integer.valueOf(pages[0].trim());
