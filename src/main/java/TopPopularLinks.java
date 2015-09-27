@@ -137,7 +137,7 @@ public class TopPopularLinks extends Configured implements Tool {
 		protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
 			int linkId = Integer.valueOf(key.toString());
 			int refLinksNum = Integer.valueOf(value.toString());
-			topLinks.add(new Pair<Integer, Integer>(linkId, refLinksNum));
+			topLinks.add(new Pair<Integer, Integer>(refLinksNum, linkId));
 
 			if (topLinks.size() > N){
 				topLinks.remove(topLinks.first());
