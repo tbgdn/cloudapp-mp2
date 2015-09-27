@@ -3,24 +3,24 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class PopularityLeague extends Configured implements Tool {
 
@@ -51,6 +51,8 @@ public class PopularityLeague extends Configured implements Tool {
 
     // TODO
 
+	private static Logger LOG = LoggerFactory.getLogger(PopularityLeague.class);
+
 	public static String readHDFSFile(String path, Configuration conf) throws IOException{
 		Path pt=new Path(path);
 		FileSystem fs = FileSystem.get(pt.toUri(), conf);
@@ -74,6 +76,7 @@ public class PopularityLeague extends Configured implements Tool {
 		protected void setup(Context context) throws IOException, InterruptedException {
 			String leaguePath = context.getConfiguration().get("league");
 			league = Arrays.asList(readHDFSFile(leaguePath, context.getConfiguration()).split("\n"));
+			LOG.error("Here is the league: ", league);
 		}
 
 		@Override
