@@ -156,13 +156,11 @@ public class PopularityLeague extends Configured implements Tool {
 		@Override
 		protected void reduce(NullWritable key, Iterable<IntArrayWritable> values, Context context) throws IOException, InterruptedException {
 			TreeSet<Pair<Integer, Integer>> pageRanks = new TreeSet<Pair<Integer, Integer>>();
-			Map<Integer, Integer> pageIdVsRank = new HashMap<Integer, Integer>();
 			for (IntArrayWritable pair: values){
 				IntWritable[] ints = (IntWritable[])pair.toArray();
 				int pageId = ints[0].get();
 				int refsNum = ints[1].get();
 				pageRanks.add(new Pair<Integer, Integer>(refsNum, pageId));
-				LOG.info("Page {} has {} num of links.", pageId, refsNum);
 			}
 			int rank = -1;
 			int previousCount = 0;
@@ -172,15 +170,7 @@ public class PopularityLeague extends Configured implements Tool {
 					rank ++;
 				}
 				previousCount = count;
-				LOG.info("Page {} has rank {}.", pair.second, rank);
-				pageIdVsRank.put(pair.second, rank);
-			}
-			LOG.info("Reducing number of inputs.");
-			for (IntArrayWritable pair: values){
-				IntWritable[] ints = (IntWritable[])pair.toArray();
-				int pageId = ints[0].get();
-				LOG.info("Writing {} with rank {}.", pageId, pageIdVsRank.get(pageId));
-				context.write(new IntWritable(pageId), new IntWritable(pageIdVsRank.get(pageId)));
+				context.write(new IntWritable(pair.second), new IntWritable(rank));
 			}
 		}
 	}
