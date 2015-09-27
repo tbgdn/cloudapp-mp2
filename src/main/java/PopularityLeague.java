@@ -68,7 +68,7 @@ public class PopularityLeague extends Configured implements Tool {
     }
 
     // TODO
-	public static final Log LOG = LogFactory.getLog(TopPopularLinks.class);
+	public static final Log LOG = LogFactory.getLog(PopularityLeague.class);
 
 	public static String readHDFSFile(String path, Configuration conf) throws IOException{
 		Path pt=new Path(path);
