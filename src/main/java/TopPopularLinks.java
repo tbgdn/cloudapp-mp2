@@ -176,7 +176,7 @@ public class TopPopularLinks extends Configured implements Tool {
 			}
 
 			for (Pair<Integer, Integer> pair: topLinks){
-				context.write(new IntWritable(pair.first), new IntWritable(pair.second));
+				context.write(new IntWritable(pair.second), new IntWritable(pair.first));
 			}
 
 		}
