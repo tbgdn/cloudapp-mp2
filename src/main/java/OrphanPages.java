@@ -29,10 +29,10 @@ public class OrphanPages extends Configured implements Tool {
     public int run(String[] args) throws Exception {
         //TODO
 		Job job = Job.getInstance(this.getConf(), "Orphan Pages");
-		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(IntWritable.class);
+		job.setOutputKeyClass(Integer.class);
+		job.setOutputValueClass(NullWritable.class);
 
-		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputKeyClass(IntWritable.class);
 		job.setMapOutputValueClass(IntWritable.class);
 
 		job.setMapperClass(LinkCountMap.class);
