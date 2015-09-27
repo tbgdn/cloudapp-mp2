@@ -70,16 +70,19 @@ public class PopularityLeague extends Configured implements Tool {
 
 	public static class LinkCountMap extends Mapper<Object, Text, IntWritable, IntWritable> {
 		// TODO
-		private List<String> league = new ArrayList<String>();
+		private List<String> leagueLinks = new ArrayList<String>();
 
 		@Override
 		protected void setup(Context context) throws IOException, InterruptedException {
 			Configuration config = context.getConfiguration();
 			String leaguePath = config.get("league");
 			String leagueContent = readHDFSFile(leaguePath, config);
-			LOG.debug("League path: {}", leaguePath);
-			LOG.debug("League content: {}", leagueContent);
-			league = Arrays.asList(readHDFSFile(leaguePath, config).split("\n"));
+			LOG.info("League path: {}", leaguePath);
+			LOG.info("League content: {}", leagueContent);
+			for(String line: leagueContent.split("\n")){
+				leagueLinks.add(line.trim());
+			}
+			LOG.info("League links count: {}", leagueLinks.size());
 		}
 
 		@Override
@@ -88,7 +91,8 @@ public class PopularityLeague extends Configured implements Tool {
 			if (pages.length == 2){
 				String[] referredPages = pages[1].trim().split(" ");
 				for (String referredPage: referredPages){
-					if (league.contains(league)){
+					if (leagueLinks.contains(referredPage)){
+						LOG.info("League link: {}", referredPage);
 						context.write(new IntWritable(Integer.valueOf(referredPage)), new IntWritable(1));
 					}
 				}
