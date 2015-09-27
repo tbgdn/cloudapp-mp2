@@ -22,9 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
 
 public class PopularityLeague extends Configured implements Tool {
 
@@ -158,6 +156,7 @@ public class PopularityLeague extends Configured implements Tool {
 		@Override
 		protected void reduce(NullWritable key, Iterable<IntArrayWritable> values, Context context) throws IOException, InterruptedException {
 			TreeSet<Pair<Integer, Integer>> pageRanks = new TreeSet<Pair<Integer, Integer>>();
+			Map<Integer, Integer> pageIdVsRank = new HashMap<Integer, Integer>();
 			for (IntArrayWritable pair: values){
 				IntWritable[] ints = (IntWritable[])pair.toArray();
 				int pageId = ints[0].get();
@@ -172,7 +171,12 @@ public class PopularityLeague extends Configured implements Tool {
 					rank ++;
 				}
 				previousCount = count;
-				context.write(new IntWritable(pair.second), new IntWritable(rank));
+				pageIdVsRank.put(pair.second, rank);
+			}
+			for (IntArrayWritable pair: values){
+				IntWritable[] ints = (IntWritable[])pair.toArray();
+				int pageId = ints[0].get();
+				context.write(new IntWritable(pageId), new IntWritable(pageIdVsRank.get(pageId)));
 			}
 		}
 	}
