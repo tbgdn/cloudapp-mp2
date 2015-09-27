@@ -50,7 +50,7 @@ public class PopularityLeague extends Configured implements Tool {
 		countingJob.setReducerClass(LinkCountReduce.class);
 		FileInputFormat.setInputPaths(countingJob, new Path(args[0]));
 		FileOutputFormat.setOutputPath(countingJob, tmpPath);
-		countingJob.setJarByClass(TitleCount.class);
+		countingJob.setJarByClass(PopularityLeague.class);
 		countingJob.waitForCompletion(true);
 
 		Job ranking = Job.getInstance(this.getConf(), "Ranking");
@@ -64,6 +64,7 @@ public class PopularityLeague extends Configured implements Tool {
 		FileOutputFormat.setOutputPath(ranking, new Path(args[1]));
 		ranking.setInputFormatClass(KeyValueTextInputFormat.class);
 		ranking.setOutputFormatClass(TextOutputFormat.class);
+		ranking.setJarByClass(PopularityLeague.class);
 
 		return ranking.waitForCompletion(true) ? 0 : 1;
     }
@@ -110,12 +111,9 @@ public class PopularityLeague extends Configured implements Tool {
 			Configuration config = context.getConfiguration();
 			String leaguePath = config.get("league");
 			String leagueContent = readHDFSFile(leaguePath, config);
-			LOG.info("League path: {}", leaguePath);
-			LOG.info("League content: {}", leagueContent);
 			for(String line: leagueContent.split("\n")){
 				leagueLinks.add(line.trim());
 			}
-			LOG.info("League links count: {}", leagueLinks.size());
 		}
 
 		@Override
@@ -125,7 +123,6 @@ public class PopularityLeague extends Configured implements Tool {
 				String[] referredPages = pages[1].trim().split(" ");
 				for (String referredPage: referredPages){
 					if (leagueLinks.contains(referredPage)){
-						LOG.info("League link: {}", referredPage);
 						context.write(new IntWritable(Integer.valueOf(referredPage)), new IntWritable(1));
 					}
 				}
