@@ -58,6 +58,7 @@ public class PopularityLeague extends Configured implements Tool {
 		ranking.setMapOutputValueClass(IntArrayWritable.class);
 		ranking.setMapperClass(PageRankMap.class);
 		ranking.setReducerClass(PageRankReduce.class);
+		ranking.setNumReduceTasks(1);
 		FileInputFormat.setInputPaths(ranking, tmpPath);
 		FileOutputFormat.setOutputPath(ranking, new Path(args[1]));
 		ranking.setInputFormatClass(KeyValueTextInputFormat.class);
